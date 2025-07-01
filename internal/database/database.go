@@ -29,13 +29,13 @@ func Initialize(cfg config.DatabaseConfig) (*gorm.DB, error) {
 
 	var err error
 	var retries = 5
-	
+
 	// 重试连接机制
 	for i := 0; i < retries; i++ {
 		DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 			Logger: logger.Default.LogMode(logger.Info),
 		})
-		
+
 		if err == nil {
 			// 连接成功，测试数据库连接
 			sqlDB, err := DB.DB()
@@ -44,21 +44,21 @@ func Initialize(cfg config.DatabaseConfig) (*gorm.DB, error) {
 				sqlDB.SetMaxOpenConns(10)
 				sqlDB.SetMaxIdleConns(5)
 				sqlDB.SetConnMaxLifetime(time.Hour)
-				
+
 				// 测试连接
 				if err = sqlDB.Ping(); err == nil {
 					break
 				}
 			}
 		}
-		
+
 		log.Printf("Database connection attempt %d/%d failed: %v", i+1, retries, err)
 		if i < retries-1 {
 			log.Printf("Retrying in 5 seconds...")
 			time.Sleep(5 * time.Second)
 		}
 	}
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database after %d attempts: %w", retries, err)
 	}

@@ -107,7 +107,7 @@ func (a *AuthService) AdminAuthMiddleware() gin.HandlerFunc {
 		if !a.validateSessionToken(sessionToken) {
 			// 清除无效cookie
 			c.SetCookie("admin_session", "", -1, "/", "", false, true)
-			
+
 			if c.GetHeader("X-Requested-With") == "XMLHttpRequest" {
 				c.JSON(http.StatusUnauthorized, gin.H{"error": "会话已过期"})
 				c.Abort()
