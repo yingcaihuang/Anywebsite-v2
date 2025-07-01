@@ -14,24 +14,27 @@ services:
       - ./static:/root/static
       - ./certs:/root/certs
       - ./uploads:/root/uploads
+      - ./configs:/root/configs:ro
     environment:
       - SHS_DATABASE_HOST=mysql
       - SHS_DATABASE_USER=app
       - SHS_DATABASE_PASSWORD=password
       - SHS_DATABASE_DBNAME=static_hosting
       - SHS_SERVER_DOMAIN=localhost:8080
+      - TZ=Asia/Shanghai
     depends_on:
       mysql:
         condition: service_healthy
     restart: unless-stopped
     networks:
       - app-network
-    # 添加健康检查
+    # 改进健康检查
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/articles"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
+      start_period: 30s
 
   mysql:
     image: mysql:8.0
@@ -42,9 +45,11 @@ services:
       - MYSQL_PASSWORD=password
       - MYSQL_CHARSET=utf8mb4
       - MYSQL_COLLATION=utf8mb4_unicode_ci
+      - TZ=Asia/Shanghai
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./scripts/docker-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./docker/mysql/conf.d:/etc/mysql/conf.d:ro
     ports:
       - "3306:3306"
     healthcheck:
@@ -52,12 +57,20 @@ services:
       timeout: 20s
       retries: 10
       interval: 30s
-      start_period: 30s
+      start_period: 60s
     restart: unless-stopped
     networks:
       - app-network
-    # 优化 MySQL 性能
-    command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=256M
+    # 优化 MySQL 性能和兼容性
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --innodb-buffer-pool-size=256M
+      --max-connections=100
+      --innodb-log-file-size=128M
+      --innodb-flush-log-at-trx-commit=2
+      --sync-binlog=0
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
 
 volumes:
   mysql_data:
