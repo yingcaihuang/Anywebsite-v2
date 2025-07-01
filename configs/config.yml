@@ -1,0 +1,31 @@
+server:
+  port: "8080"
+  mode: "debug" # debug, release
+  domain: "localhost"
+
+database:
+  host: "127.0.0.1"  # 使用 IPv4 地址避免 IPv6 问题
+  port: 3306
+  user: "app"
+  password: "password"
+  dbname: "static_hosting"
+  charset: "utf8mb4"
+  # 连接超时和重试设置
+  timeout: "30s"
+  max_open_conns: 10
+  max_idle_conns: 5
+
+acme:
+  email: "admin@example.com"
+  staging: true # 使用 Let's Encrypt 测试环境
+
+security:
+  jwt_secret: "your-super-secret-jwt-key"
+  api_keys:
+    - "demo-api-key-12345"
+    - "n8n-integration-key"
+
+storage:
+  static_path: "./static"
+  uploads_path: "./uploads"
+  certs_path: "./certs"

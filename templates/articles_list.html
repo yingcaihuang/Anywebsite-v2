@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 侧边栏 -->
+            <div class="col-md-2 p-0">
+                <div class="sidebar p-3">
+                    <h5><a href="/admin/dashboard" class="text-decoration-none">管理后台</a></h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/dashboard">仪表板</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/admin/articles">文章管理</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/articles/new">新建文章</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- 主内容区 -->
+            <div class="col-md-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1>文章管理</h1>
+                    <a href="/admin/articles/new" class="btn btn-primary">新建文章</a>
+                </div>
+                
+                <!-- 筛选器 -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <form method="GET" class="d-flex">
+                            <select name="status" class="form-select me-2">
+                                <option value="">所有状态</option>
+                                <option value="draft" {{if eq .status "draft"}}selected{{end}}>草稿</option>
+                                <option value="published" {{if eq .status "published"}}selected{{end}}>已发布</option>
+                                <option value="expired" {{if eq .status "expired"}}selected{{end}}>已过期</option>
+                            </select>
+                            <button type="submit" class="btn btn-outline-primary">筛选</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- 文章列表 -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>标题</th>
+                                        <th>Slug</th>
+                                        <th>状态</th>
+                                        <th>过期时间</th>
+                                        <th>创建时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{range .articles}}
+                                    <tr>
+                                        <td>{{.ID}}</td>
+                                        <td>{{.Title}}</td>
+                                        <td>
+                                            {{.Slug}}
+                                            {{if eq .Status "published"}}
+                                            <a href="/p/{{.Slug}}" target="_blank" class="text-muted ms-1">
+                                                <small>查看</small>
+                                            </a>
+                                            {{end}}
+                                        </td>
+                                        <td>
+                                            {{if eq .Status "published"}}
+                                            <span class="badge bg-success">已发布</span>
+                                            {{else if eq .Status "draft"}}
+                                            <span class="badge bg-warning">草稿</span>
+                                            {{else if eq .Status "expired"}}
+                                            <span class="badge bg-danger">已过期</span>
+                                            {{end}}
+                                        </td>
+                                        <td>
+                                            {{if .ExpiresAt}}
+                                            {{.ExpiresAt.Format "2006-01-02 15:04"}}
+                                            {{else}}
+                                            -
+                                            {{end}}
+                                        </td>
+                                        <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+                                        <td>
+                                            <a href="/admin/articles/{{.ID}}/edit" class="btn btn-sm btn-outline-primary">编辑</a>
+                                            <form method="POST" action="/admin/articles/{{.ID}}/delete" class="d-inline" 
+                                                  onsubmit="return confirm('确定要删除这篇文章吗？')">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">删除</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {{else}}
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">暂无文章</td>
+                                    </tr>
+                                    {{end}}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- 分页 -->
+                        {{if gt .total 0}}
+                        <nav aria-label="页面导航">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item {{if eq .page 1}}disabled{{end}}">
+                                    <a class="page-link" href="?page={{add .page -1}}&status={{.status}}">上一页</a>
+                                </li>
+                                <li class="page-item active">
+                                    <span class="page-link">第 {{.page}} 页</span>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{add .page 1}}&status={{.status}}">下一页</a>
+                                </li>
+                            </ul>
+                        </nav>
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

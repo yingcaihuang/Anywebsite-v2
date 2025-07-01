@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  web:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - GOPROXY=https://goproxy.cn,direct
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    volumes:
+      - ./static:/root/static
+      - ./certs:/root/certs
+      - ./uploads:/root/uploads
+    environment:
+      - SHS_DATABASE_HOST=mysql
+      - SHS_DATABASE_USER=app
+      - SHS_DATABASE_PASSWORD=password
+      - SHS_DATABASE_DBNAME=static_hosting
+      - SHS_SERVER_DOMAIN=localhost:8080
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+    # 添加健康检查
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/articles"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=static_hosting
+      - MYSQL_USER=app
+      - MYSQL_PASSWORD=password
+      - MYSQL_CHARSET=utf8mb4
+      - MYSQL_COLLATION=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "app", "-ppassword"]
+      timeout: 20s
+      retries: 10
+      interval: 30s
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - app-network
+    # 优化 MySQL 性能
+    command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=256M
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
